@@ -34,6 +34,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
+import org.eclipse.californium.core.CoapClient;
+import org.eclipse.californium.core.CoapHandler;
+import org.eclipse.californium.core.CoapObserveRelation;
+import org.eclipse.californium.core.CoapResponse;
+import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.leshan.ResponseCode;
 import org.eclipse.leshan.client.californium.LeshanClient;
 import org.eclipse.leshan.client.resource.BaseInstanceEnabler;
@@ -59,6 +64,12 @@ public class ParkingSpot {
     private final Location locationInstance = new Location();
     private final FirmwareUpdate firmwareUpdateInstance = new FirmwareUpdate();
     private final MultipleAxisJoystick multipleAxisJoystickInstance = new MultipleAxisJoystick();
+
+    private static final String uriPrefix = "coap://127.0.0.1:5683/";
+    private static final CoapClient piLed = new CoapClient(uriPrefix + "led");
+    private static final CoapClient piJoystick = new CoapClient(uriPrefix + "joystick");
+
+
 
     public static void main(final String[] args) {
         if (args.length != 1 && args.length != 4 && args.length != 2) {
@@ -427,7 +438,7 @@ public class ParkingSpot {
 
         @Override
         public ReadResponse read(int resourceid) {
-            System.out.println("Read on Firmware Update Resource " + resourceid);
+            System.out.println("Read on Addressable Text Display Resource " + resourceid);
             switch (resourceid) {
                 case 5527:
                     return ReadResponse.success(resourceid, getText());
@@ -438,10 +449,11 @@ public class ParkingSpot {
 
         @Override
         public WriteResponse write(int resourceid, LwM2mResource value) {
-            System.out.println("Write on Firmware Update Resource " + resourceid + " value " + value);
+            System.out.println("Write on Addressable Text Display Resource " + resourceid + " value " + value);
             switch (resourceid) {
                 case 5527:
                     setText((String) value.getValue());
+                    CoapResponse resp = piLed.put(this.text, MediaTypeRegistry.TEXT_PLAIN);
                     fireResourcesChange(resourceid);
                     return WriteResponse.success();
                 default:
@@ -460,16 +472,45 @@ public class ParkingSpot {
 
     public static class  MultipleAxisJoystick  extends BaseInstanceEnabler {
         private int digitalInputCounter;
-        private int yValue;
+        private float yValue;
+        private CoapObserveRelation relation;
 
         public MultipleAxisJoystick() {
             digitalInputCounter = 0;
             yValue = -100;
+            relation = piJoystick.observe(new CoapHandler() {
+
+                @Override public void onLoad(CoapResponse response) {
+                    String joystickState = response.getResponseText();
+                    boolean changed = false;
+                    System.out.println(joystickState);
+                    System.out.println(yValue);
+                    if(joystickState.equals("up") && yValue != 100) {
+                        yValue = 100;
+                        changed = true;
+                    }
+                    if(joystickState.equals("down") && yValue != -100) {
+                        changed = true;
+                        yValue = -100;
+                    }
+                    System.out.println("did it change or not?");
+                    if(changed) {
+                        System.out.println("it did!");
+                        fireResourcesChange(5703);
+                        System.out.println( joystickState );
+                    }
+                }
+
+                @Override public void onError() {
+                    System.err.println("Error on setting the observe relation");
+                }
+            });
+
         }
 
         @Override
         public ReadResponse read(int resourceid) {
-            System.out.println("Read on Firmware Update Resource " + resourceid);
+            System.out.println("Read on Joystick Resource " + resourceid);
             switch (resourceid) {
                 case 5501:
                     return ReadResponse.success(resourceid, getDigitalInputCounter());
@@ -480,11 +521,11 @@ public class ParkingSpot {
             }
         }
 
-        public int getyValue() {
+        public float getyValue() {
             return yValue;
         }
 
-        public void setyValue(int yValue) {
+        public void setyValue(float yValue) {
             this.yValue = yValue;
         }
 
