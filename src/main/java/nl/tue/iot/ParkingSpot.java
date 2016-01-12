@@ -19,6 +19,7 @@ package nl.tue.iot;
  *******************************************************************************/
 
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -37,7 +38,6 @@ import org.eclipse.leshan.ResponseCode;
 import org.eclipse.leshan.client.californium.LeshanClient;
 import org.eclipse.leshan.client.resource.BaseInstanceEnabler;
 import org.eclipse.leshan.client.resource.LwM2mObjectEnabler;
-import org.eclipse.leshan.client.resource.ObjectEnabler;
 import org.eclipse.leshan.client.resource.ObjectsInitializer;
 import org.eclipse.leshan.core.model.ResourceModel.Type;
 import org.eclipse.leshan.core.node.LwM2mResource;
@@ -61,16 +61,23 @@ public class ParkingSpot {
     private final MultipleAxisJoystick multipleAxisJoystickInstance = new MultipleAxisJoystick();
 
     public static void main(final String[] args) {
-        if (args.length != 4 && args.length != 2) {
+        if (args.length != 1 && args.length != 4 && args.length != 2) {
             System.out.println(
                     "Usage:\njava -jar target/parking-spot-*-SNAPSHOT-jar-with-dependencies.jar [ClientIP] [ClientPort] ServerIP ServerPort");
         } else {
-            if (args.length == 4)
-                new ParkingSpot(args[0], Integer.parseInt(args[1]), args[2], Integer.parseInt(args[3]));
-            else
-                new ParkingSpot("0", 0, args[0], Integer.parseInt(args[1]));
+            if (args.length == 1) {
+                AvahiBrowser browser = new AvahiBrowser(args[0]);
+                new ParkingSpot("0", 0, browser.getHostName(), browser.getPort());
+            } else {
+                if (args.length == 4)
+                    new ParkingSpot(args[0], Integer.parseInt(args[1]), args[2], Integer.parseInt(args[3]));
+                else
+                    new ParkingSpot("0", 0, args[0], Integer.parseInt(args[1]));
+            }
         }
     }
+
+
 
     public ParkingSpot(final String localHostName, final int localPort, final String serverHostName,
                        final int serverPort) {
