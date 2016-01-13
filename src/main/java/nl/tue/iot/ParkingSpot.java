@@ -570,7 +570,7 @@ public class ParkingSpot {
 
         @Override
         public WriteResponse write(int resourceid, LwM2mResource value) {
-            System.out.println("Write on ParkingSpotObject Resource " + resourceid + " value " + value);
+            System.out.println("Write on ParkingSpotObject Resource " + resourceid + " value " + value.getValue());
             switch (resourceid) {
                 case 32801:
                     setState((String) value.getValue());
@@ -602,6 +602,9 @@ public class ParkingSpot {
         }
 
         public void setState(String state) {
+            if(state.equals("free")){
+                this.vehicleId = "";
+            }
             this.state = state;
         }
 

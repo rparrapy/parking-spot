@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
 public class AvahiBrowser {
 
     private String serviceName;
-    private final String SERVICE_TYPE = "_http._tcp";
+    private final String SERVICE_TYPE = "_coap._udp";
     private final String COMMAND = "avahi-browse -rtp " + SERVICE_TYPE;
     private String hostName;
     private int port;
