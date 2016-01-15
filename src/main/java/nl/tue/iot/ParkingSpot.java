@@ -388,9 +388,13 @@ public class ParkingSpot {
         @Override
         public ExecuteResponse execute(int resourceid, String params) {
             System.out.println("Execute on Firmware Update resource " + resourceid);
-            if (resourceid == 2)
-                //TODO implement firmware update here
-                System.out.println("\t params " + params);
+            if (resourceid == 2){
+                FirmwareUpdater updater = new FirmwareUpdater(this.packageURI);
+                Thread updaterThread = new Thread(() -> updater.update());
+                updaterThread.setDaemon(true);
+                updaterThread.start();
+                //System.out.println("\t params " + params);
+            }
             return ExecuteResponse.success();
         }
 

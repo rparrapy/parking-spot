@@ -10,7 +10,7 @@ import java.io.InputStreamReader;
  * Calls avahi and parses the result to get the hostname and the port
  * for serviceName
  */
-public class AvahiBrowser {
+public class AvahiBrowser extends ShellCommandRunner{
 
     private String serviceName;
     private final String SERVICE_TYPE = "_coap._udp";
@@ -52,7 +52,10 @@ public class AvahiBrowser {
         String[] lines = output.split(System.getProperty("line.separator"));
         for(String line : lines){
             String[] attrs = line.split(";");
+            System.out.println(line);
+            System.out.println(attrs.length);
             if (attrs.length == 9 && attrs[3].equals(this.serviceName)) {
+                System.out.println("parsing");
                 this.hostName = attrs[7];
                 this.port = Integer.parseInt(attrs[8]);
             }
@@ -61,31 +64,6 @@ public class AvahiBrowser {
 
     }
 
-    private String execute(String command) {
-        StringBuilder sb = new StringBuilder();
-        String[] commands = new String[]{"/bin/sh", "-c", command};
-        try {
-            Process proc = new ProcessBuilder(commands).start();
-            BufferedReader stdInput = new BufferedReader(new
-                    InputStreamReader(proc.getInputStream()));
 
-            BufferedReader stdError = new BufferedReader(new
-                    InputStreamReader(proc.getErrorStream()));
-
-            String s = null;
-            while ((s = stdInput.readLine()) != null) {
-                sb.append(s);
-                sb.append("\n");
-            }
-
-            while ((s = stdError.readLine()) != null) {
-                sb.append(s);
-                sb.append("\n");
-            }
-        } catch (IOException e) {
-            return e.getMessage();
-        }
-        return sb.toString();
-    }
 
 }
